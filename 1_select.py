@@ -3,23 +3,21 @@ from select import select
 
 
 to_monitor = list()
-counter = 0
 
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-server_socket.bind(('localhost', 1488))
+server_socket.bind(('localhost', 5000))
 server_socket.listen()
 
 
-def accept_connection(server_socket):
-    global counter
+def accept_connection(server_socket_fun):
     print('The server is waiting for connection')
-    client_socket, addr = server_socket.accept()
+    client_socket, addr = server_socket_fun.accept()
     print('Connection from', addr)
-    counter += 1
-    to_monitor.append((counter, client_socket))
+    to_monitor.append(client_socket)
 
-def send_message(client_socket, monitor_index):
+
+def send_message(client_socket):
     print('Server is waiting until client will write something')
     request = client_socket.recv(4096)
 
@@ -29,13 +27,15 @@ def send_message(client_socket, monitor_index):
     else:
         print('The client was killed')
         client_socket.close()
-        to_monitor.pop()
+        to_monitor.remove(client_socket)
 
 
 def event_loop():
     while True:
-        list_for_select = [element[1] for element in to_monitor]
-        ready_to_read, _, _ = select(list_for_select, [], [])
+        try:
+            ready_to_read, _, _ = select(to_monitor, [], [])
+        except KeyboardInterrupt:
+            exit()
 
         for sock in ready_to_read:
             if sock is server_socket:
@@ -45,5 +45,5 @@ def event_loop():
 
 
 if __name__ == '__main__':
-    to_monitor.append((counter, server_socket))
+    to_monitor.append(server_socket)
     event_loop()
