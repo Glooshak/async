@@ -1,6 +1,6 @@
 import socket
 import selectors
-
+import sys
 
 selector = selectors.DefaultSelector()
 
@@ -47,7 +47,7 @@ def event_loop():
         try:
             events = selector.select()
         except KeyboardInterrupt:
-            exit()
+            sys.exit()
 
         for key, _ in events:
             callback = key.data
